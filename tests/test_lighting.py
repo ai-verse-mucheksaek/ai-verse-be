@@ -27,7 +27,7 @@ def test_card_makes_patch_neutral_gray():
     shot = _scene_with_card(cast=(1.3, 1.0, 0.6))
     result = L.correct_lighting(shot)
     assert result.method == "card"
-    pixels, _ = L.find_card_patch(result.image)
+    pixels, _, _ = L.find_card_patch(result.image)
     r, g, b = np.median(pixels, axis=0)
     assert abs(r - L.CARD_GRAY) <= 3 and abs(g - L.CARD_GRAY) <= 3 and abs(b - L.CARD_GRAY) <= 3
 
@@ -45,3 +45,13 @@ def test_no_card_no_saved_leaves_image_unchanged():
     result = L.correct_lighting(no_card)
     assert result.method == "none"
     assert np.array_equal(result.image, no_card)
+
+
+def test_mirrored_selfie_card_is_found():
+    """전면 카메라처럼 좌우 반전된 사진에서도 카드를 찾고, 보정 결과는 같아야 한다."""
+    shot = _scene_with_card(cast=(1.3, 1.0, 0.6))
+    mirrored = shot[:, ::-1].copy()
+    result = L.correct_lighting(mirrored)
+    assert result.method == "card" and result.mirrored
+    normal = L.correct_lighting(shot)
+    assert np.allclose(result.gains, normal.gains, rtol=0.02)

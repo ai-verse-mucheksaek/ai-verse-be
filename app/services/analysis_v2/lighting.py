@@ -46,6 +46,7 @@ class LightingResult:
     method: str                        # "card" | "saved" | "none"
     gains: tuple[float, float, float]  # 선형 RGB에 곱한 값
     card_quad: np.ndarray | None = None  # 찾은 회색 패치의 네 꼭짓점 (디버그용)
+    mirrored: bool = False               # 좌우 반전된 사진(셀카)에서 카드를 찾았는지
 
 
 # ---------------------------------------------------------------- 색 공간 변환
@@ -70,13 +71,35 @@ def _detector() -> cv2.aruco.ArucoDetector:
     return cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(ARUCO_DICT_ID), params)
 
 
-def find_card_patch(image_rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
-    """기준 카드를 찾아 (회색 패치 픽셀 (N,3), 패치 꼭짓점 (4,2))을 돌려준다. 없으면 None.
+def _detect_markers(gray: np.ndarray) -> tuple[list[np.ndarray], np.ndarray | None, bool]:
+    """마커를 찾는다. 못 찾으면 좌우를 뒤집어 한 번 더 찾는다.
+
+    휴대폰·태블릿 전면 카메라는 사진을 거울처럼 좌우 반전해 저장하는 경우가 많은데,
+    마커 무늬는 뒤집히면 인식되지 않는다. 뒤집은 사진에서 찾은 좌표는 원래 사진 좌표로 되돌린다.
+    """
+    detector = _detector()
+    corners, ids, _ = detector.detectMarkers(gray)
+    if ids is not None:
+        return list(corners), ids, False
+    corners, ids, _ = detector.detectMarkers(cv2.flip(gray, 1))
+    if ids is None:
+        return [], None, False
+    w = gray.shape[1]
+    restored = []
+    for c in corners:
+        c = c.copy()
+        c[..., 0] = (w - 1) - c[..., 0]
+        restored.append(c)
+    return restored, ids, True
+
+
+def find_card_patch(image_rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray, bool] | None:
+    """기준 카드를 찾아 (회색 패치 픽셀 (N,3), 패치 꼭짓점 (4,2), 좌우반전 여부)를 돌려준다. 없으면 None.
 
     마커가 하나만 보여도 카드 위치를 계산할 수 있다(손에 일부 가려져도 동작).
     """
     gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY)
-    corners, ids, _ = _detector().detectMarkers(gray)
+    corners, ids, mirrored = _detect_markers(gray)
     if ids is None:
         return None
 
@@ -107,7 +130,7 @@ def find_card_patch(image_rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray] | No
     pixels = image_rgb[mask.astype(bool)]
     if len(pixels) < 50:
         return None  # 카드가 너무 작게 찍힘
-    return pixels, quad
+    return pixels, quad, mirrored
 
 
 # ---------------------------------------------------------------- 보정값 계산
@@ -168,11 +191,11 @@ def correct_lighting(image_rgb: np.ndarray, saved_gains_path: Path | None = None
     """사진 색을 보정한다. saved_gains_path를 주면 카드가 안 보일 때 마지막 보정값을 쓴다."""
     found = find_card_patch(image_rgb)
     if found is not None:
-        pixels, quad = found
+        pixels, quad, mirrored = found
         gains = _gains_from_reference(pixels)
         if gains is not None:
             save_gains(saved_gains_path, gains)  # 다음에 카드가 가려졌을 때 쓰려고 저장
-            return LightingResult(apply_gains(image_rgb, gains), "card", gains, quad)
+            return LightingResult(apply_gains(image_rgb, gains), "card", gains, quad, mirrored)
 
     saved = load_saved_gains(saved_gains_path)
     if saved is not None:

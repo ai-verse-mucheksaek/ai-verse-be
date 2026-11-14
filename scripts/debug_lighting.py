@@ -44,7 +44,10 @@ def skin_hex(rgb: np.ndarray, mask: np.ndarray) -> str:
 def run(path: Path) -> None:
     rgb = load_rgb(path)
     result = correct_lighting(rgb)  # 확인용이라 저장값(saved)은 쓰지 않음
-    print(f"[{path.name}] {METHOD_KO[result.method]}  보정값(R,G,B)={tuple(round(g, 2) for g in result.gains)}")
+    mirrored_note = " (좌우 반전 사진)" if result.mirrored else ""
+    print(f"[{path.name}] {METHOD_KO[result.method]}{mirrored_note}  보정값(R,G,B)={tuple(round(g, 2) for g in result.gains)}")
+    if result.method == "none":
+        print("   카드를 못 찾았어요. 마커 4개 중 하나 이상이 선명하게, 손가락에 가리지 않게 찍혔는지 확인해 주세요.")
 
     try:
         regions = extract_regions(result.image)
