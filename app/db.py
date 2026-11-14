@@ -64,6 +64,10 @@ SEED_PRODUCTS = [
     ("lip-winter-01", "lip", "체리 레드 립", "부스 테스터", "#B51246", '["winter"]', "LIP-04"),
     ("blush-winter-01", "blush", "쿨 베리 블러셔", "부스 테스터", "#B85C7A", '["winter"]', "BLUSH-04"),
     ("eye-winter-01", "eye", "딥 플럼 아이", "부스 테스터", "#5E315B", '["winter"]', "EYE-04"),
+    ("romand-bare-apricot", "lip", "베어 애프리콧", "rom&nd", "#D98C73", '["spring"]', "봄 웜톤 추천"),
+    ("romand-figfig", "lip", "피그피그", "rom&nd", "#A65B70", '["summer"]', "여름 쿨톤 추천"),
+    ("romand-acorn-brown", "lip", "도토리 밤", "rom&nd", "#8F4E3B", '["autumn"]', "가을 웜톤 추천"),
+    ("romand-plum-coke", "lip", "플럼 콕", "rom&nd", "#802D50", '["winter"]', "겨울 쿨톤 추천"),
 ]
 
 
