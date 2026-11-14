@@ -11,3 +11,7 @@ data/results/*
 !data/results/.gitkeep
 
 .idea/
+
+# 분석 디버그 결과 이미지
+debug_output/
+debug_input/

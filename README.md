@@ -111,3 +111,21 @@ PERFECTCORP_API_KEY=발급받은_API_KEY
 uv run pytest -q
 ```
 
+
+
+## MediaPipe 분석 (analysis_v2)
+
+분석에는 Google 공식 Face Landmarker 모델 `models/face_landmarker.task`가 필요합니다. 저장소에 없으면 backend 폴더에서 아래 명령으로 받으세요(약 3.7MB, 한 번 받아 커밋해 두면 팀원은 따로 받을 필요 없음).
+
+```powershell
+curl.exe -L -o models/face_landmarker.task https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
+```
+
+얼굴 부위(볼·이마·입술·눈동자)가 제대로 잡히는지 확인하려면:
+
+```powershell
+uv run python scripts/debug_regions.py 사진.jpg      # 사진 한 장
+uv run python scripts/debug_regions.py 사진폴더/      # 폴더 안 사진 전부
+```
+
+결과 이미지는 `debug_output/`에 저장됩니다(GitHub에는 올라가지 않음). 주황=볼, 하늘=이마, 분홍=입술, 초록=눈동자.
