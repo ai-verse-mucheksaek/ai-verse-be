@@ -142,3 +142,13 @@ uv run python scripts/debug_lighting.py debug_input  # 보정 전/후 비교 이
 - 카드를 찾으면 `card`, 카드가 가려지면 마지막 보정값(`saved`), 둘 다 없으면 보정하지 않음(`none`)
 - 인쇄는 **흑백(그레이스케일)**, **무광 일반 용지**로. 컬러 프린터로 회색을 찍으면 색이 섞일 수 있습니다.
 - 피부가 하얗게 날아갈 만큼 밝게 찍히면 보정으로도 복구가 안 되므로 경고를 띄웁니다.
+
+### 색 특징과 사계절 분류
+
+`app/services/analysis_v2/pipeline.py`의 `analyze_rgb()`가 얼굴 찾기 → 조명 보정 → 색 특징(CIELAB 명도·채도·색상각) → 사계절 분류를 한 번에 합니다. 아직 서버 API에는 연결하지 않았습니다(기존 분석 그대로 동작).
+
+```powershell
+uv run python scripts/debug_analysis.py debug_input   # 새 분석 결과 + 근거 + 기존 분석과 비교
+```
+
+분류 기준값은 `app/services/analysis_v2/classify.py`의 `Thresholds`에 모여 있습니다. 지금 값은 시작용 추정값이며, 실제 부스 사진과 YouCam 결과로 다시 맞출 예정입니다.
