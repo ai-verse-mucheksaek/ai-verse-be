@@ -152,3 +152,16 @@ uv run python scripts/debug_analysis.py debug_input   # 새 분석 결과 + 근�
 ```
 
 분류 기준값은 `app/services/analysis_v2/classify.py`의 `Thresholds`에 모여 있습니다. 지금 값은 시작용 추정값이며, 실제 부스 사진과 YouCam 결과로 다시 맞출 예정입니다.
+
+### 정확도 검증 (YouCam 비교)
+
+YouCam AI Facial Color Tones Analyzer는 계절이 아니라 피부·입술·눈·머리카락 **색**을 돌려줍니다(1회 20유닛). 그래서 ① 같은 사진에서 잰 색의 차이(ΔE)와 ② YouCam 색을 우리 분류 규칙에 넣었을 때 같은 계절이 나오는지를 비교합니다.
+
+```powershell
+uv run python scripts/validate_youcam.py validation_input --dry-run   # 유닛 안 씀, 예상 유닛만 확인
+uv run python scripts/validate_youcam.py validation_input             # 실제 호출 (사용 전 확인 질문)
+```
+
+- `.env`에 `PERFECTCORP_API_KEY` 필요. 한 번 보낸 사진은 `validation_output/cache/`에 저장돼 다시 호출하지 않습니다.
+- 진단천으로 판정한 정답이 있으면 사진 폴더에 `labels.csv`를 둡니다: 첫 줄 `파일,계절`, 이후 `사진1.jpg,여름` 형식.
+- 결과는 `validation_output/results.csv`. 사진 폴더와 결과 폴더는 GitHub에 올라가지 않습니다.
