@@ -1,4 +1,4 @@
-# 예뻐질 사람? It's Me! — Backend
+# 무채색에서 살아남기 — Backend
 
 부스용 얼굴 사진 업로드, 퍼스널컬러 분석, 메이크업 색상 추천, 가상 메이크업 Before/After를 제공하는 FastAPI 백엔드입니다.
 
