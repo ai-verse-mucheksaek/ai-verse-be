@@ -1,0 +1,27 @@
+[project]
+name = "its-me-backend"
+version = "1.0.0"
+description = "AI personal color analysis and virtual makeup booth backend"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "python-multipart>=0.0.20,<1",
+  "pydantic-settings>=2.7,<3",
+  "pillow>=11,<13",
+  "numpy>=2.1,<3",
+  "opencv-python-headless>=4.10,<5",
+  "httpx>=0.28,<1",
+  "qrcode[pil]>=8.0,<9",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.25,<1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
