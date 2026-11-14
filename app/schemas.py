@@ -26,6 +26,16 @@ class AnalysisResult(BaseModel):
     palette: list[str]
     recommendations: list[Recommendation]
     disclaimer: str
+    # ---- 새 분석(v2)에서만 채워지는 항목 (legacy면 기본값) ----
+    analyzer: str = "legacy"
+    reliability: Literal["high", "medium", "low"] | None = None
+    warnings: list[str] = []
+    warning_messages: list[str] = []
+    reasons: list[str] = []
+    season_scores: dict[str, float] | None = None
+    content: dict | None = None
+    features: dict | None = None
+    lighting: dict | None = None
 
 
 class AnalysisResponse(BaseModel):
@@ -98,4 +108,8 @@ class PublicResult(BaseModel):
     recommendations: list[Recommendation]
     products: list[Product]
     disclaimer: str
+    reliability: str | None = None
+    warning_messages: list[str] = []
+    reasons: list[str] = []
+    content: dict | None = None
 

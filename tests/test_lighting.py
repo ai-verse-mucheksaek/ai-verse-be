@@ -35,9 +35,17 @@ def test_card_makes_patch_neutral_gray():
 def test_saved_gains_used_when_card_missing(tmp_path):
     saved = tmp_path / "gains.json"
     L.correct_lighting(_scene_with_card(cast=(1.3, 1.0, 0.6)), saved_gains_path=saved)
-    no_card = np.full((400, 400, 3), 128, dtype=np.uint8)
+    no_card = np.full((800, 800, 3), 128, dtype=np.uint8)  # 같은 카메라(같은 해상도)
     result = L.correct_lighting(no_card, saved_gains_path=saved)
     assert result.method == "saved"
+
+
+def test_saved_gains_not_used_for_other_camera(tmp_path):
+    """해상도가 다른 사진(참가자 휴대폰 사진)에는 부스 보정값을 쓰지 않는다."""
+    saved = tmp_path / "gains.json"
+    L.correct_lighting(_scene_with_card(cast=(1.3, 1.0, 0.6)), saved_gains_path=saved)
+    phone_photo = np.full((1200, 900, 3), 128, dtype=np.uint8)
+    assert L.correct_lighting(phone_photo, saved_gains_path=saved).method == "none"
 
 
 def test_no_card_no_saved_leaves_image_unchanged():

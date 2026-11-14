@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 60
     max_concurrent_try_ons: int = 2
     log_path: Path = Path("data/app.log")
+    analyzer: str = "v2"  # v2: 새 분석(MediaPipe+기준 카드), legacy: 예전 분석
     vto_provider: str = "mock"
     perfectcorp_api_key: str = ""
     perfectcorp_base_url: str = "https://yce-api-01.makeupar.com"
@@ -31,6 +32,13 @@ class Settings(BaseSettings):
     @classmethod
     def split_origins(cls, value):
         return value.split(",") if isinstance(value, str) else value
+
+    @field_validator("analyzer")
+    @classmethod
+    def validate_analyzer(cls, value: str) -> str:
+        if value not in {"v2", "legacy"}:
+            raise ValueError("ANALYZER must be v2 or legacy")
+        return value
 
     @field_validator("vto_provider")
     @classmethod

@@ -86,7 +86,8 @@ def _skin_pixels(rgb: np.ndarray, face: FaceRegion) -> np.ndarray:
     return selected if len(selected) >= 100 else pixels
 
 
-def analyze(path: Path) -> dict:
+def analyze_legacy(path: Path) -> dict:
+    """예전 분석 (Haar 얼굴 박스 + 피부 평균색). ANALYZER=legacy일 때 쓴다."""
     image = load_and_validate(path)
     rgb = np.asarray(image)
     face = detect_face(rgb)
@@ -121,5 +122,80 @@ def analyze(path: Path) -> dict:
         "recommendations": recs,
         "disclaimer": "조명과 카메라에 따라 결과가 달라질 수 있는 체험용 추천이며 전문 진단을 대체하지 않습니다.",
         "face_box": {"x": face.x, "y": face.y, "w": face.w, "h": face.h},
+        "analyzer": "legacy",
     }
 
+
+
+DISCLAIMER = "조명과 카메라에 따라 결과가 달라질 수 있는 체험용 추천이며 전문 진단을 대체하지 않습니다."
+
+
+def analyze(path: Path) -> dict:
+    """API가 부르는 분석 진입점. .env의 ANALYZER 설정(v2/legacy)에 따라 고른다."""
+    from app.config import get_settings
+
+    settings = get_settings()
+    if settings.analyzer == "legacy":
+        return analyze_legacy(path)
+    return analyze_v2(path, saved_gains_path=Path(settings.storage_dir) / "lighting_gains.json")
+
+
+def analyze_v2(path: Path, saved_gains_path: Path | None = None) -> dict:
+    """새 분석(analysis_v2)을 돌리고, 기존 API 형식 + 새 항목으로 돌려준다."""
+    from app.services.analysis_v2.landmarks import FaceNotFoundError
+    from app.services.analysis_v2.pipeline import analyze_rgb
+
+    image = load_and_validate(path)
+    try:
+        r = analyze_rgb(np.asarray(image), saved_gains_path=saved_gains_path)
+    except FaceNotFoundError as exc:
+        raise ImageValidationError(str(exc)) from exc
+    except ValueError as exc:  # 피부 영역이 너무 작을 때 등
+        raise ImageValidationError(str(exc)) from exc
+    return to_api_result(r)
+
+
+def to_api_result(r: dict) -> dict:
+    """analysis_v2 결과를 기존 API 필드(season, palette, recommendations 등)에 맞춰 바꾼다.
+
+    기존 필드는 그대로 유지해서 프론트·가상 메이크업·제품 추천이 깨지지 않게 하고,
+    새 항목(reliability, reasons, content 등)은 추가로 붙인다.
+    """
+    content, f = r["content"], r["features"]
+    skin_hex = f["skin"]["hex"]
+    metrics = {
+        "skin_L": f["skin"]["L"],
+        "skin_a": f["skin"]["a"],
+        "skin_b": f["skin"]["b"],
+        "skin_chroma": f["skin"]["C"],
+        "skin_hue": f["skin"]["h"],
+        **{f"axis_{k}": v for k, v in r["axis_scores"].items()},
+    }
+    if f.get("contrast") is not None:
+        metrics["skin_iris_contrast"] = f["contrast"]
+    x, y, w, h = r["face_box"]
+    return {
+        "season": r["season"],
+        "season_ko": r["season_ko"],
+        "undertone": r["undertone"],
+        "confidence": r["confidence"],
+        "measured_skin_color": {"hex": skin_hex, "rgb": tuple(int(skin_hex[i : i + 2], 16) for i in (1, 3, 5))},
+        "metrics": metrics,
+        "palette": [p["hex"] for p in content["palette"]],
+        "recommendations": [
+            {"category": m["category"], "name": m["name"], "color": m["hex"],
+             "description": f"{r['season_ko']}에 어울리는 {m['name']} 계열"}
+            for m in content["makeup"]
+        ],
+        "disclaimer": DISCLAIMER,
+        "face_box": {"x": int(x), "y": int(y), "w": int(w), "h": int(h)},
+        "analyzer": "v2",
+        "reliability": r["reliability"],
+        "warnings": r["warnings"],
+        "warning_messages": r["warning_messages"],
+        "reasons": r["reasons"],
+        "season_scores": r["season_scores"],
+        "content": content,
+        "features": f,
+        "lighting": r["lighting"],
+    }

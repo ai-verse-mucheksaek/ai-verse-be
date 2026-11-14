@@ -273,7 +273,7 @@ def public_result(token: str, svc: tuple[Database, Storage] = Depends(services))
     if not analysis or not analysis.get("result_json"):
         raise HTTPException(404, "공유 결과가 만료되었거나 삭제되었습니다.")
     result = analysis["result_json"]
-    return {"season": result["season"], "season_ko": result["season_ko"], "undertone": result["undertone"], "palette": result["palette"], "recommendations": result["recommendations"], "products": matched_products(db, result), "disclaimer": result["disclaimer"]}
+    return {"season": result["season"], "season_ko": result["season_ko"], "undertone": result["undertone"], "palette": result["palette"], "recommendations": result["recommendations"], "products": matched_products(db, result), "disclaimer": result["disclaimer"], "reliability": result.get("reliability"), "warning_messages": result.get("warning_messages", []), "reasons": result.get("reasons", []), "content": result.get("content")}
 
 
 @app.get("/api/v1/public/results/{token}/qr", include_in_schema=False)

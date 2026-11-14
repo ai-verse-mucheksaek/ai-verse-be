@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 data/*.db
 data/*.log
+data/*.json
 data/uploads/*
 data/results/*
 !data/uploads/.gitkeep

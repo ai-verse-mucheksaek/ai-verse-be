@@ -17,7 +17,7 @@ from PIL import Image, ImageOps
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.services.analysis_v2.landmarks import FaceNotFoundError  # noqa: E402
 from app.services.analysis_v2.pipeline import analyze_rgb  # noqa: E402
-from app.services.color_analysis import analyze as analyze_old  # noqa: E402
+from app.services.color_analysis import analyze_legacy as analyze_old  # noqa: E402
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
 LIGHT_KO = {"card": "기준 카드", "saved": "저장된 보정값", "none": "보정 없음"}

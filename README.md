@@ -169,3 +169,21 @@ uv run python scripts/validate_youcam.py validation_input             # 실제 �
 ### 결과 카드 내용
 
 계절별 어울리는 색, 메이크업, 옷(어울리는 색/피할 색), 머리색, 골드/실버, 부스 립 제품은 `app/data/season_content.json`에 있습니다. 코드를 몰라도 이 파일만 고치면 결과 카드 내용이 바뀝니다. 고친 뒤 `uv run pytest`로 형식 오류가 없는지 확인합니다.
+
+### 서버 연결 (ANALYZER 설정)
+
+`POST /api/v1/analyses`는 이제 새 분석(v2)을 씁니다. 기존 응답 필드(`season`, `palette`, `recommendations`, `face_box` 등)는 그대로이고, 아래 항목이 추가됐습니다.
+
+| 필드 | 내용 |
+| --- | --- |
+| `analyzer` | `v2` 또는 `legacy` |
+| `reliability` | `high` / `medium` / `low` |
+| `warning_messages` | 화면에 그대로 보여줄 경고 문구 목록 |
+| `reasons` | 분석 근거 문장 목록 |
+| `season_scores` | 네 계절 점수 (합계 1) |
+| `content` | 결과 카드 내용 (요약, 색, 옷, 머리색, 액세서리, 부스 립, 2순위) |
+| `features`, `lighting` | 측정한 색과 조명 보정 정보 (디버그용) |
+
+QR 공개 결과(`/api/v1/public/results/{token}`)에도 `reasons`, `reliability`, `warning_messages`, `content`가 포함됩니다.
+
+문제가 생기면 `.env`에 `ANALYZER=legacy`를 넣고 서버를 다시 켜면 예전 분석으로 돌아갑니다. 기준 카드 보정값은 `data/lighting_gains.json`에 저장되며, 같은 카메라(같은 해상도) 사진에만 6시간 동안 재사용됩니다.

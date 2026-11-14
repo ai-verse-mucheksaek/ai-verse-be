@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -153,21 +154,33 @@ def apply_gains(image_rgb: np.ndarray, gains: tuple[float, float, float]) -> np.
 
 
 # ---------------------------------------------------------------- 저장된 보정값
-def load_saved_gains(path: Path | None) -> tuple[float, float, float] | None:
+def load_saved_gains(
+    path: Path | None, image_size: tuple[int, int] | None = None, max_age_hours: float = 6.0
+) -> tuple[float, float, float] | None:
+    """저장된 보정값을 읽는다.
+
+    - 오래된 값(기본 6시간)은 조명이 바뀌었을 수 있어 쓰지 않는다.
+    - 해상도가 다른 사진(참가자 휴대폰 사진 등)은 다른 카메라·조명이므로 쓰지 않는다.
+    """
     if path is None or not path.exists():
+        return None
+    if time.time() - path.stat().st_mtime > max_age_hours * 3600:
         return None
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
+        if image_size is not None and tuple(data.get("image_size", ())) != tuple(image_size):
+            return None
         return tuple(float(g) for g in data["gains"])  # type: ignore[return-value]
     except (ValueError, KeyError, TypeError):
         return None
 
 
-def save_gains(path: Path | None, gains: tuple[float, float, float]) -> None:
+def save_gains(path: Path | None, gains: tuple[float, float, float], image_size: tuple[int, int] | None = None) -> None:
     if path is None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"gains": list(gains)}), encoding="utf-8")
+    data = {"gains": list(gains), "image_size": list(image_size) if image_size else None}
+    path.write_text(json.dumps(data), encoding="utf-8")
 
 
 # ---------------------------------------------------------------- 노출 검사
@@ -194,10 +207,10 @@ def correct_lighting(image_rgb: np.ndarray, saved_gains_path: Path | None = None
         pixels, quad, mirrored = found
         gains = _gains_from_reference(pixels)
         if gains is not None:
-            save_gains(saved_gains_path, gains)  # 다음에 카드가 가려졌을 때 쓰려고 저장
+            save_gains(saved_gains_path, gains, image_rgb.shape[:2])  # 다음에 카드가 가려졌을 때 쓰려고 저장
             return LightingResult(apply_gains(image_rgb, gains), "card", gains, quad, mirrored)
 
-    saved = load_saved_gains(saved_gains_path)
+    saved = load_saved_gains(saved_gains_path, image_rgb.shape[:2])
     if saved is not None:
         return LightingResult(apply_gains(image_rgb, saved), "saved", saved)
 
