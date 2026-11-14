@@ -192,7 +192,7 @@ async def create_try_on(payload: TryOnRequest, request: Request, settings: Setti
     except Exception as exc:
         output.unlink(missing_ok=True)
         db.fail_try_on(try_on_id, str(exc))
-        raise HTTPException(502, f"가상 메이크업 처리 실패: {exc}") from exc
+        raise HTTPException(502, 가상 메이크업 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.") from exc
     return _try_on_response(db.get_try_on(try_on_id), analysis)
 
 
