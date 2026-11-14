@@ -10,3 +10,4 @@ data/results/*
 !data/uploads/.gitkeep
 !data/results/.gitkeep
 
+.idea/
