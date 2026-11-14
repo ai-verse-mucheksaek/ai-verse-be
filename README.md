@@ -129,3 +129,16 @@ uv run python scripts/debug_regions.py 사진폴더/      # 폴더 안 사진 �
 ```
 
 결과 이미지는 `debug_output/`에 저장됩니다(GitHub에는 올라가지 않음). 주황=볼, 하늘=이마, 분홍=입술, 초록=눈동자.
+
+### 조명 보정 (기준 카드)
+
+포토박스 안, 얼굴과 같이 찍히는 위치에 기준 카드를 붙여 둡니다. 카드 네 귀퉁이의 마커로 카드를 자동으로 찾고, 가운데 회색 영역이 '진짜 회색'이 되도록 사진 색을 보정합니다.
+
+```powershell
+uv run python scripts/make_reference_card.py        # 인쇄용 카드(reference_card.pdf) 만들기
+uv run python scripts/debug_lighting.py debug_input  # 보정 전/후 비교 이미지 만들기
+```
+
+- 카드를 찾으면 `card`, 카드가 가려지면 마지막 보정값(`saved`), 둘 다 없으면 보정하지 않음(`none`)
+- 인쇄는 **흑백(그레이스케일)**, **무광 일반 용지**로. 컬러 프린터로 회색을 찍으면 색이 섞일 수 있습니다.
+- 피부가 하얗게 날아갈 만큼 밝게 찍히면 보정으로도 복구가 안 되므로 경고를 띄웁니다.
