@@ -49,6 +49,13 @@ def run(path: Path) -> None:
     print("   계절 점수: " + "  ".join(f"{k} {v:.0%}" for k, v in ranked))
     for reason in r["reasons"]:
         print(f"   · {reason}")
+    c = r["content"]
+    print(f"   [결과 카드] 1순위: {c['season_ko']} ({c['score']:.0%})")
+    print(f"     {c['summary']}")
+    print(f"     어울리는 색: {', '.join(p['name'] for p in c['palette'])}")
+    print(f"     옷: {', '.join(c['clothes']['best'])}  /  피할 색: {', '.join(c['clothes']['avoid'])}")
+    print(f"     머리색: {', '.join(c['hair'])}  /  액세서리: {c['accessory']['metal_ko']}  /  부스 립: {c['booth_lip']}")
+    print(f"     2순위: {c['second_season']['season_ko']} ({c['second_season']['score']:.0%})")
     for msg in r["warning_messages"]:
         print(f"   ⚠ {msg}")
     try:

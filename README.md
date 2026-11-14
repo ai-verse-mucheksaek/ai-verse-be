@@ -165,3 +165,7 @@ uv run python scripts/validate_youcam.py validation_input             # 실제 �
 - `.env`에 `PERFECTCORP_API_KEY` 필요. 한 번 보낸 사진은 `validation_output/cache/`에 저장돼 다시 호출하지 않습니다.
 - 진단천으로 판정한 정답이 있으면 사진 폴더에 `labels.csv`를 둡니다: 첫 줄 `파일,계절`, 이후 `사진1.jpg,여름` 형식.
 - 결과는 `validation_output/results.csv`. 사진 폴더와 결과 폴더는 GitHub에 올라가지 않습니다.
+
+### 결과 카드 내용
+
+계절별 어울리는 색, 메이크업, 옷(어울리는 색/피할 색), 머리색, 골드/실버, 부스 립 제품은 `app/data/season_content.json`에 있습니다. 코드를 몰라도 이 파일만 고치면 결과 카드 내용이 바뀝니다. 고친 뒤 `uv run pytest`로 형식 오류가 없는지 확인합니다.

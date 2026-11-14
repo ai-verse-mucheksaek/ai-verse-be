@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 
 from .classify import THRESHOLDS, Thresholds, classify
+from .content import build_result_content
 from .features import extract_features
 from .landmarks import extract_regions
 from .lighting import correct_lighting, exposure_warning
@@ -72,4 +73,5 @@ def analyze_rgb(
         "features": features.to_dict(),
         "lighting": {"method": lit.method, "gains": [round(g, 3) for g in lit.gains], "mirrored": lit.mirrored},
         "face_box": list(regions.face_box),
+        "content": build_result_content(result.season, result.season_scores),
     }
