@@ -166,6 +166,23 @@ class Database:
             )
 
             return None
+    def get_try_on_usage(self, analysis_id: str) -> dict[str, int]:
+        with self.connect() as con:
+            used = con.execute(
+                "SELECT COUNT(*) FROM try_ons WHERE analysis_id = ?",
+                (analysis_id,),
+            ).fetchone()[0]
+
+            row = con.execute(
+                "SELECT used FROM try_on_usage WHERE id = 1"
+            ).fetchone()
+
+            total_used = row[0] if row else 0
+
+        return {
+            "used": used,
+            "total_used": total_used,
+        }
 
     def finish_try_on(self, try_on_id: str, result_path: str, provider_task_id: str | None = None) -> None:
         with self.connect() as con:

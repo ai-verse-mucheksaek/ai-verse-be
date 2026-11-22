@@ -216,6 +216,55 @@ async def create_try_on(payload: TryOnRequest, request: Request, settings: Setti
         raise HTTPException(502, "가상 메이크업 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.") from exc
     return _try_on_response(db.get_try_on(try_on_id), analysis)
 
+@app.get("/api/v1/analyses/{analysis_id}/try-on-usage")
+def get_try_on_usage(
+    analysis_id: str,
+    request: Request,
+    settings: Settings = Depends(get_settings),
+    svc: tuple[Database, Storage] = Depends(services),
+):
+    from fastapi.responses import JSONResponse
+
+    db, storage = svc
+    cleanup_expired(db, storage)
+
+    analysis = db.get_analysis(analysis_id)
+
+    if not analysis or analysis["status"] != "completed":
+        raise HTTPException(404, "분석 결과를 찾을 수 없습니다.")
+
+    admin_token = request.headers.get("X-Admin-Token")
+
+    is_admin = bool(
+        settings.admin_token
+        and admin_token == settings.admin_token
+    )
+
+    usage = db.get_try_on_usage(analysis_id)
+
+    used = usage["used"]
+
+    total_remaining = max(
+        0, settings.max_total_try_ons - usage["total_used"]
+    )
+
+    limit = None if is_admin else settings.max_try_ons_per_analysis
+
+    remaining = (
+        total_remaining
+        if is_admin
+        else min(max(0, limit - used), total_remaining)
+    )
+
+    return JSONResponse(
+        content={
+            "is_admin": is_admin,
+            "limit": limit,
+            "used": used,
+            "remaining": remaining,
+        },
+        headers={"Cache-Control": "no-store"},
+    )
 
 @app.get("/api/v1/try-ons/{try_on_id}", response_model=TryOnResponse)
 def get_try_on(try_on_id: str, svc: tuple[Database, Storage] = Depends(services)):
