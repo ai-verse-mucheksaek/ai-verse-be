@@ -20,3 +20,5 @@ reference_card.pdf
 reference_card.png
 validation_input/
 validation_output/
+data/limit_test/
+data/limit_test.db

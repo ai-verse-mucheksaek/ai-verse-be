@@ -182,7 +182,28 @@ async def create_try_on(payload: TryOnRequest, request: Request, settings: Setti
     try_on_id = uuid4().hex
     now = datetime.now(UTC).isoformat()
     row = {"id": try_on_id, "analysis_id": payload.analysis_id, "created_at": now, "status": "processing", "provider": settings.vto_provider, "request": {"colors": colors, "intensity": payload.intensity}}
-    db.create_try_on(row)
+    admin_token = request.headers.get("X-Admin-Token")
+
+    is_admin = bool(
+        settings.admin_token
+        and admin_token == settings.admin_token
+    )
+
+    limit_error = db.create_try_on(
+        row,
+        None if is_admin else settings.max_try_ons_per_analysis,
+        settings.max_total_try_ons,
+    )
+
+    if limit_error == "analysis_limit":
+        raise HTTPException(
+            429, f"가상 메이크업은 최대 {settings.max_try_ons_per_analysis}회까지 체험할 수 있습니다."
+        )
+
+    if limit_error == "total_limit":
+        raise HTTPException(
+            429, "행사 전체 가상 메이크업 사용량이 초과되었습니다."
+        )
     output = storage.results / f"{try_on_id}.jpg"
     try:
         async with request.app.state.try_on_gate:

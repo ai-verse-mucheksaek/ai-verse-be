@@ -30,6 +30,13 @@ CREATE TABLE IF NOT EXISTS try_ons (
   error TEXT,
   FOREIGN KEY(analysis_id) REFERENCES analyses(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS try_on_usage (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  used INTEGER NOT NULL DEFAULT 0
+);
+
+INSERT OR IGNORE INTO try_on_usage (id, used)
+VALUES (1, 0);
 CREATE TABLE IF NOT EXISTS products (
   id TEXT PRIMARY KEY,
   category TEXT NOT NULL,
@@ -125,12 +132,40 @@ class Database:
             row = con.execute("SELECT * FROM analyses WHERE id=?", (analysis_id,)).fetchone()
         return self._decode(row, "result_json")
 
-    def create_try_on(self, row: dict[str, Any]) -> None:
+    def create_try_on(
+        self,
+        row: dict[str, Any],
+        max_per_analysis: int | None = 20,
+        max_total: int = 1800,
+    ) -> str | None:
         with self.connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+
+            count = con.execute(
+                "SELECT COUNT(*) FROM try_ons WHERE analysis_id = ?",
+                (row["analysis_id"],),
+            ).fetchone()[0]
+
+            if max_per_analysis is not None and count >= max_per_analysis:
+                return "analysis_limit"
+
+            total = con.execute(
+                "SELECT used FROM try_on_usage WHERE id = 1"
+            ).fetchone()[0]
+
+            if total >= max_total:
+                return "total_limit"
+
             con.execute(
                 "INSERT INTO try_ons(id,analysis_id,created_at,status,provider,request_json) VALUES(?,?,?,?,?,?)",
                 (row["id"], row["analysis_id"], row["created_at"], row["status"], row["provider"], json.dumps(row["request"], ensure_ascii=False)),
             )
+
+            con.execute(
+                "UPDATE try_on_usage SET used = used + 1 WHERE id = 1"
+            )
+
+            return None
 
     def finish_try_on(self, try_on_id: str, result_path: str, provider_task_id: str | None = None) -> None:
         with self.connect() as con:
