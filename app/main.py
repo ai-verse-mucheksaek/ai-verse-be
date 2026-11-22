@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager, suppress
 from datetime import UTC, datetime
 from io import BytesIO
@@ -19,6 +20,7 @@ from app.services.qr import make_qr_png
 from app.services.storage import Storage
 from app.services.virtual_tryon import provider_for
 
+logger = logging.getLogger("uvicorn.error")
 
 def services(settings: Settings = Depends(get_settings)) -> tuple[Database, Storage]:
     return Database(settings), Storage(settings)
@@ -138,6 +140,7 @@ async def create_analysis(
         storage.delete([str(path)])
         raise HTTPException(422, str(exc)) from exc
     except Exception as exc:
+        logger.exception("analysis failed: %s", analysis_id)
         db.fail_analysis(analysis_id, "분석 중 오류가 발생했습니다.")
         storage.delete([str(path)])
         raise HTTPException(500, "분석 중 오류가 발생했습니다.") from exc
