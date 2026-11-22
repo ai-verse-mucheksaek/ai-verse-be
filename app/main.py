@@ -214,6 +214,7 @@ async def create_try_on(payload: TryOnRequest, request: Request, settings: Setti
             task_id = await provider.render(Path(analysis["original_path"]), output, colors, payload.intensity, result["face_box"])
             db.finish_try_on(try_on_id, str(output), task_id)
     except Exception as exc:
+        logger.exception("try-on failed: %s", try_on_id)
         output.unlink(missing_ok=True)
         db.fail_try_on(try_on_id, str(exc))
         raise HTTPException(502, "가상 메이크업 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.") from exc
