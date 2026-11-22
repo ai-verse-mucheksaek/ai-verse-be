@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     cleanup_interval_minutes: int = 10
     rate_limit_per_minute: int = 60
     max_concurrent_try_ons: int = 2
+    max_try_ons_per_analysis: int = 20
+    max_total_try_ons: int = 1800
     log_path: Path = Path("data/app.log")
     analyzer: str = "v2"  # v2: 새 분석(MediaPipe+기준 카드), legacy: 예전 분석
     vto_provider: str = "mock"

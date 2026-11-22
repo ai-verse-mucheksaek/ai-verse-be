@@ -81,3 +81,57 @@ def test_full_flow_with_stubbed_analysis(client, monkeypatch):
     assert client.get(f"/api/v1/analyses/{aid}").status_code == 404
     assert client.get(f"/api/v1/public/results/{token}").status_code == 404
 
+
+
+def test_try_on_limit(client, monkeypatch, tmp_path):
+    import app.main as main
+    from app.db import Database
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "max_try_ons_per_analysis", 2)
+    monkeypatch.setattr(settings, "max_total_try_ons", 4)
+
+    db = Database(settings)
+
+    result = {
+        "recommendations": [
+            {"category": "lip", "color": "#FF6F61"},
+            {"category": "blush", "color": "#F6A57A"},
+            {"category": "eye", "color": "#C99152"},
+        ],
+        "face_box": {"x": 60, "y": 40, "w": 180, "h": 220},
+    }
+
+    class FakeProvider:
+        async def render(self, *args):
+            return "test-task"
+
+    monkeypatch.setattr(main, "provider_for", lambda _: FakeProvider())
+
+    for aid in ["user1", "user2"]:
+        db.create_analysis(aid, str(tmp_path / f"{aid}.jpg"))
+        db.finish_analysis(aid, result)
+
+    def try_on(aid, token=None):
+        headers = {"X-Admin-Token": token} if token else {}
+
+        return client.post(
+            "/api/v1/try-ons",
+            json={"analysis_id": aid, "intensity": 15},
+            headers=headers,
+        )
+
+    assert try_on("user1").status_code == 201
+    assert try_on("user1").status_code == 201
+    assert try_on("user1").status_code == 429
+
+    assert try_on("user1", "wrong-token").status_code == 429
+
+    assert try_on("user1", "test-admin-token").status_code == 201
+
+    assert try_on("user2").status_code == 201
+
+    db.delete_analysis("user1")
+
+    assert try_on("user2").status_code == 429
+    assert try_on("user2", "test-admin-token").status_code == 429
